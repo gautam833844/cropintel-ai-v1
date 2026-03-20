@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hydroponic Crop Recommendation System</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Header Section -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">🌾</div>
+        <h1 class="main-title">Hydroponic Crop Recommendation System</h1>
+        <p class="tagline">AI-Powered Agricultural Decision Support</p>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="container">
+        <!-- Info Section -->
+        <section class="info-section">
+          <h2>How it Works</h2>
+          <p>
+            Enter your soil and weather parameters, and our machine learning
+            model will recommend the most suitable crops for your hydroponic
+            farm.
+          </p>
+          <div class="stats">
+            <div class="stat-item">
+              <span class="stat-number">7</span>
+              <span class="stat-label">Parameters</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">100%</span>
+              <span class="stat-label">Validated</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">ML</span>
+              <span class="stat-label">Powered</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Form Section -->
+        <section class="form-section">
+          <div class="form-header">
+            <h2>Enter Farm Parameters</h2>
+            <p>All fields are required for accurate prediction</p>
+          </div>
+
+          <form id="predictionForm" class="prediction-form">
+            <!-- Row 1: N, P, K -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="nitrogen">
+                  <span class="label-text">Nitrogen (N)</span>
+                  <span class="unit">mg/kg</span>
+                </label>
+                <input
+                  type="number"
+                  id="nitrogen"
+                  name="nitrogen"
+                  placeholder="0-150"
+                  step="0.1"
+                  min="0"
+                  max="150"
+                  required
+                />
+                <span class="input-hint">Range: 0-150</span>
+              </div>
+
+              <div class="form-group">
+                <label for="phosphorus">
+                  <span class="label-text">Phosphorus (P)</span>
+                  <span class="unit">mg/kg</span>
+                </label>
+                <input
+                  type="number"
+                  id="phosphorus"
+                  name="phosphorus"
+                  placeholder="0-150"
+                  step="0.1"
+                  min="0"
+                  max="150"
+                  required
+                />
+                <span class="input-hint">Range: 0-150</span>
+              </div>
+
+              <div class="form-group">
+                <label for="potassium">
+                  <span class="label-text">Potassium (K)</span>
+                  <span class="unit">mg/kg</span>
+                </label>
+                <input
+                  type="number"
+                  id="potassium"
+                  name="potassium"
+                  placeholder="0-210"
+                  step="0.1"
+                  min="0"
+                  max="210"
+                  required
+                />
+                <span class="input-hint">Range: 0-210</span>
+              </div>
+            </div>
+
+            <!-- Row 2: Temperature, Humidity -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="temperature">
+                  <span class="label-text">Temperature</span>
+                  <span class="unit">°C</span>
+                </label>
+                <input
+                  type="number"
+                  id="temperature"
+                  name="temperature"
+                  placeholder="-50 to 60"
+                  step="0.1"
+                  min="-50"
+                  max="60"
+                  required
+                />
+                <span class="input-hint">Range: -50 to 60</span>
+              </div>
+
+              <div class="form-group">
+                <label for="humidity">
+                  <span class="label-text">Humidity</span>
+                  <span class="unit">%</span>
+                </label>
+                <input
+                  type="number"
+                  id="humidity"
+                  name="humidity"
+                  placeholder="0-100"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  required
+                />
+                <span class="input-hint">Range: 0-100%</span>
+              </div>
+            </div>
+
+            <!-- Row 3: pH, Rainfall -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="ph">
+                  <span class="label-text">pH Level</span>
+                  <span class="unit">pH</span>
+                </label>
+                <input
+                  type="number"
+                  id="ph"
+                  name="ph"
+                  placeholder="0-14"
+                  step="0.1"
+                  min="0"
+                  max="14"
+                  required
+                />
+                <span class="input-hint">Range: 0-14</span>
+              </div>
+
+              <div class="form-group">
+                <label for="rainfall">
+                  <span class="label-text">Rainfall</span>
+                  <span class="unit">mm</span>
+                </label>
+                <input
+                  type="number"
+                  id="rainfall"
+                  name="rainfall"
+                  placeholder="0-500"
+                  step="0.1"
+                  min="0"
+                  max="500"
+                  required
+                />
+                <span class="input-hint">Range: 0-500</span>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-predict">
+              <span class="btn-icon">🔮</span>
+              Predict Crop
+            </button>
+          </form>
+        </section>
+
+        <!-- Results Section -->
+        <section id="resultsSection" class="results-section hidden">
+          <div class="result-card">
+            <div class="result-header">
+              <h2>🎯 Prediction Result</h2>
+            </div>
+
+            <div class="result-content">
+              <div class="result-item">
+                <span class="result-label">Recommended Crop:</span>
+                <div class="result-value crop-result">
+                  <span id="cropName">-</span>
+                </div>
+              </div>
+
+              <div class="result-divider"></div>
+
+              <div class="result-item">
+                <span class="result-label">Confidence Score:</span>
+                <div class="confidence-container">
+                  <div class="result-value confidence-result">
+                    <span id="cropConfidence">-</span>
+                  </div>
+                  <div class="confidence-bar" id="confidenceBar"></div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn-new-prediction"
+              onclick="resetForm()"
+            >
+              ↺ New Prediction
+            </button>
+          </div>
+        </section>
+
+        <!-- Error Section -->
+        <section id="errorSection" class="error-section hidden">
+          <div class="error-card">
+            <span class="error-icon">⚠️</span>
+            <h3>Validation Error</h3>
+            <p id="errorMessage">An error occurred. Please try again.</p>
+            <button type="button" class="btn-dismiss" onclick="dismissError()">
+              Dismiss
+            </button>
+          </div>
+        </section>
+
+        <!-- Loading Section -->
+        <section id="loadingSection" class="loading-section hidden">
+          <div class="loading-card">
+            <div class="loading-spinner"></div>
+            <p>Processing your request...</p>
+            <p class="loading-subtitle">
+              Analyzing soil and weather conditions
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+      <p>University ML Project | Hydroponic Crop Recommendation System</p>
+      <p class="footer-subtitle">
+        Powered by Machine Learning & Agricultural Science
+      </p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+      /**
+       * Hydroponic Crop Recommendation System
+       * Client-side validation and form handling
+       */
+
+      // ========== CONFIGURATION ==========
+      const VALIDATION_RANGES = {
+        nitrogen: { min: 0, max: 150, label: "Nitrogen" },
+        phosphorus: { min: 0, max: 150, label: "Phosphorus" },
+        potassium: { min: 0, max: 210, label: "Potassium" },
+        temperature: { min: -50, max: 60, label: "Temperature" },
+        humidity: { min: 0, max: 100, label: "Humidity" },
+        ph: { min: 0, max: 14, label: "pH Level" },
+        rainfall: { min: 0, max: 500, label: "Rainfall" },
+      };
+
+      // ========== DOM ELEMENTS ==========
+      const predictionForm = document.getElementById("predictionForm");
+      const resultsSection = document.getElementById("resultsSection");
+      const errorSection = document.getElementById("errorSection");
+      const loadingSection = document.getElementById("loadingSection");
+      const errorMessage = document.getElementById("errorMessage");
+      const cropNameEl = document.getElementById("cropName");
+      const cropConfidenceEl = document.getElementById("cropConfidence");
+      const confidenceBar = document.getElementById("confidenceBar");
+      const submitBtn = predictionForm.querySelector(".btn-predict");
+
+      // ========== UTILITY FUNCTIONS ==========
+
+      /**
+       * Validate a single field
+       */
+      function validateField(fieldName, value) {
+        const range = VALIDATION_RANGES[fieldName];
+        const numValue = parseFloat(value);
+
+        if (!value || value.trim() === "") {
+          return `${range.label} is required`;
+        }
+
+        if (isNaN(numValue)) {
+          return `${range.label} must be a valid number`;
+        }
+
+        if (numValue < range.min || numValue > range.max) {
+          return `${range.label} must be between ${range.min} and ${range.max}`;
+        }
+
+        return null;
+      }
+
+      /**
+       * Validate all form inputs
+       */
+      function validateForm() {
+        const formData = new FormData(predictionForm);
+        let firstError = null;
+
+        for (const [fieldName, value] of formData.entries()) {
+          const error = validateField(fieldName, value);
+          if (error) {
+            if (!firstError) firstError = error;
+          }
+        }
+
+        return firstError;
+      }
+
+      /**
+       * Collect form data
+       */
+      function getFormData() {
+        const formData = new FormData(predictionForm);
+        const data = {};
+
+        for (const [key, value] of formData.entries()) {
+          data[key] = parseFloat(value);
+        }
+
+        return data;
+      }
+
+      /**
+       * Show error message
+       */
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorSection.classList.remove("hidden");
+        resultsSection.classList.add("hidden");
+        loadingSection.classList.add("hidden");
+        window.scrollTo({
+          top: errorSection.offsetTop - 100,
+          behavior: "smooth",
+        });
+      }
+
+      /**
+       * Dismiss error
+       */
+      function dismissError() {
+        errorSection.classList.add("hidden");
+      }
+
+      /**
+       * Show loading state
+       */
+      function showLoading() {
+        loadingSection.classList.remove("hidden");
+        errorSection.classList.add("hidden");
+        resultsSection.classList.add("hidden");
+        submitBtn.disabled = true;
+        window.scrollTo({
+          top: loadingSection.offsetTop - 100,
+          behavior: "smooth",
+        });
+      }
+
+      /**
+       * Hide loading state
+       */
+      function hideLoading() {
+        loadingSection.classList.add("hidden");
+        submitBtn.disabled = false;
+      }
+
+      /**
+       * Display prediction result
+       */
+      function displayResult(crop, confidence) {
+        // Parse confidence percentage
+        const confidencePercent = parseFloat(confidence);
+
+        // Use textContent to prevent XSS
+        cropNameEl.textContent = crop;
+        cropConfidenceEl.textContent = confidence;
+
+        // Update confidence bar
+        confidenceBar.style.width = confidencePercent + "%";
+        confidenceBar.style.backgroundColor =
+          getColorForConfidence(confidencePercent);
+
+        errorSection.classList.add("hidden");
+        loadingSection.classList.add("hidden");
+        resultsSection.classList.remove("hidden");
+        window.scrollTo({
+          top: resultsSection.offsetTop - 100,
+          behavior: "smooth",
+        });
+      }
+
+      /**
+       * Get color based on confidence
+       */
+      function getColorForConfidence(confidence) {
+        if (confidence >= 80) return "#10b981"; // Green
+        if (confidence >= 60) return "#f59e0b"; // Orange
+        return "#ef4444"; // Red
+      }
+
+      /**
+       * Reset form
+       */
+      function resetForm() {
+        predictionForm.reset();
+        resultsSection.classList.add("hidden");
+        errorSection.classList.add("hidden");
+        loadingSection.classList.add("hidden");
+        window.scrollTo({
+          top: predictionForm.offsetTop - 100,
+          behavior: "smooth",
+        });
+      }
+
+      // ========== FORM SUBMISSION ==========
+
+      predictionForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Validate form
+        const validationError = validateForm();
+        if (validationError) {
+          showError(validationError);
+          return;
+        }
+
+        // Prepare data
+        const formData = getFormData();
+
+        // Show loading
+        showLoading();
+
+        try {
+          // Make API request
+          const response = await fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+            credentials: "same-origin",
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            displayResult(data.crop, data.confidence);
+          } else {
+            showError(
+              data.error || "Failed to get prediction. Please try again.",
+            );
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showError(
+            "Network error. Please check your connection and try again.",
+          );
+        } finally {
+          hideLoading();
+        }
+      });
+
+      // ========== INITIALIZATION ==========
+      console.log("Hydroponic Crop Recommendation System loaded successfully");
+    </script>
+  </body>
+</html>
