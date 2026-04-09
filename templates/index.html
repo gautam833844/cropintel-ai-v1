@@ -1,13 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hydroponic Crop Recommendation System</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Recommendation System</title>
+    <link rel="stylesheet" href="../static/style.css">
   </head>
   <body>
     <!-- Header Section -->
@@ -64,14 +61,14 @@
                 <input
                   type="number"
                   id="nitrogen"
-                  name="nitrogen"
-                  placeholder="0-150"
+                  name="N"
+                  placeholder="50"
                   step="0.1"
                   min="0"
                   max="150"
                   required
                 />
-                <span class="input-hint">Range: 0-150</span>
+                <span class="input-hint">Range: 0–150</span>
               </div>
 
               <div class="form-group">
@@ -82,14 +79,14 @@
                 <input
                   type="number"
                   id="phosphorus"
-                  name="phosphorus"
-                  placeholder="0-150"
+                  name="P"
+                  placeholder="50"
                   step="0.1"
                   min="0"
                   max="150"
                   required
                 />
-                <span class="input-hint">Range: 0-150</span>
+                <span class="input-hint">Range: 0–150</span>
               </div>
 
               <div class="form-group">
@@ -100,14 +97,14 @@
                 <input
                   type="number"
                   id="potassium"
-                  name="potassium"
-                  placeholder="0-210"
+                  name="K"
+                  placeholder="50"
                   step="0.1"
                   min="0"
                   max="210"
                   required
                 />
-                <span class="input-hint">Range: 0-210</span>
+                <span class="input-hint">Range: 0–210</span>
               </div>
             </div>
 
@@ -122,7 +119,7 @@
                   type="number"
                   id="temperature"
                   name="temperature"
-                  placeholder="-50 to 60"
+                  placeholder="25"
                   step="0.1"
                   min="-50"
                   max="60"
@@ -140,13 +137,13 @@
                   type="number"
                   id="humidity"
                   name="humidity"
-                  placeholder="0-100"
+                  placeholder="70"
                   step="0.1"
                   min="0"
                   max="100"
                   required
                 />
-                <span class="input-hint">Range: 0-100%</span>
+                <span class="input-hint">Range: 0–100%</span>
               </div>
             </div>
 
@@ -161,13 +158,13 @@
                   type="number"
                   id="ph"
                   name="ph"
-                  placeholder="0-14"
+                  placeholder="6.5"
                   step="0.1"
                   min="0"
                   max="14"
                   required
                 />
-                <span class="input-hint">Range: 0-14</span>
+                <span class="input-hint">Range: 0–14</span>
               </div>
 
               <div class="form-group">
@@ -179,13 +176,13 @@
                   type="number"
                   id="rainfall"
                   name="rainfall"
-                  placeholder="0-500"
+                  placeholder="100"
                   step="0.1"
                   min="0"
                   max="500"
                   required
                 />
-                <span class="input-hint">Range: 0-500</span>
+                <span class="input-hint">Range: 0–500</span>
               </div>
             </div>
 
@@ -201,14 +198,14 @@
         <section id="resultsSection" class="results-section hidden">
           <div class="result-card">
             <div class="result-header">
-              <h2>🎯 Prediction Result</h2>
+              <h2>✅ Prediction Result</h2>
             </div>
 
             <div class="result-content">
               <div class="result-item">
                 <span class="result-label">Recommended Crop:</span>
                 <div class="result-value crop-result">
-                  <span id="cropName">-</span>
+                  <span id="cropName">—</span>
                 </div>
               </div>
 
@@ -218,18 +215,14 @@
                 <span class="result-label">Confidence Score:</span>
                 <div class="confidence-container">
                   <div class="result-value confidence-result">
-                    <span id="cropConfidence">-</span>
+                    <span id="cropConfidence">—</span>
                   </div>
                   <div class="confidence-bar" id="confidenceBar"></div>
                 </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              class="btn-new-prediction"
-              onclick="resetForm()"
-            >
+            <button type="button" class="btn-new-prediction">
               ↺ New Prediction
             </button>
           </div>
@@ -241,7 +234,7 @@
             <span class="error-icon">⚠️</span>
             <h3>Validation Error</h3>
             <p id="errorMessage">An error occurred. Please try again.</p>
-            <button type="button" class="btn-dismiss" onclick="dismissError()">
+            <button type="button" class="btn-dismiss">
               Dismiss
             </button>
           </div>
@@ -270,43 +263,42 @@
 
     <!-- JavaScript -->
     <script>
-      /**
-       * Hydroponic Crop Recommendation System
-       * Client-side validation and form handling
-       */
-
-      // ========== CONFIGURATION ==========
+      // ==================== CONFIGURATION ====================
+      const API_ENDPOINT = '/api/predict';
       const VALIDATION_RANGES = {
-        nitrogen: { min: 0, max: 150, label: "Nitrogen" },
-        phosphorus: { min: 0, max: 150, label: "Phosphorus" },
-        potassium: { min: 0, max: 210, label: "Potassium" },
-        temperature: { min: -50, max: 60, label: "Temperature" },
-        humidity: { min: 0, max: 100, label: "Humidity" },
-        ph: { min: 0, max: 14, label: "pH Level" },
-        rainfall: { min: 0, max: 500, label: "Rainfall" },
+        N: { min: 0, max: 150, label: 'Nitrogen' },
+        P: { min: 0, max: 150, label: 'Phosphorus' },
+        K: { min: 0, max: 210, label: 'Potassium' },
+        temperature: { min: -50, max: 60, label: 'Temperature' },
+        humidity: { min: 0, max: 100, label: 'Humidity' },
+        ph: { min: 0, max: 14, label: 'pH Level' },
+        rainfall: { min: 0, max: 500, label: 'Rainfall' }
       };
 
-      // ========== DOM ELEMENTS ==========
-      const predictionForm = document.getElementById("predictionForm");
-      const resultsSection = document.getElementById("resultsSection");
-      const errorSection = document.getElementById("errorSection");
-      const loadingSection = document.getElementById("loadingSection");
-      const errorMessage = document.getElementById("errorMessage");
-      const cropNameEl = document.getElementById("cropName");
-      const cropConfidenceEl = document.getElementById("cropConfidence");
-      const confidenceBar = document.getElementById("confidenceBar");
-      const submitBtn = predictionForm.querySelector(".btn-predict");
+      // ==================== DOM ELEMENTS ====================
+      const predictionForm = document.getElementById('predictionForm');
+      const resultsSection = document.getElementById('resultsSection');
+      const errorSection = document.getElementById('errorSection');
+      const loadingSection = document.getElementById('loadingSection');
+      const errorMessage = document.getElementById('errorMessage');
+      const cropNameEl = document.getElementById('cropName');
+      const cropConfidenceEl = document.getElementById('cropConfidence');
+      const confidenceBar = document.getElementById('confidenceBar');
+      const submitBtn = predictionForm.querySelector('.btn-predict');
+      const newPredictionBtn = document.querySelector('.btn-new-prediction');
+      const dismissErrorBtn = document.querySelector('.btn-dismiss');
 
-      // ========== UTILITY FUNCTIONS ==========
+      // ==================== EVENT LISTENERS ====================
+      predictionForm.addEventListener('submit', handleFormSubmit);
+      newPredictionBtn.addEventListener('click', resetForm);
+      dismissErrorBtn.addEventListener('click', dismissError);
 
-      /**
-       * Validate a single field
-       */
+      // ==================== FORM VALIDATION ====================
       function validateField(fieldName, value) {
         const range = VALIDATION_RANGES[fieldName];
         const numValue = parseFloat(value);
 
-        if (!value || value.trim() === "") {
+        if (!value || value.trim() === '') {
           return `${range.label} is required`;
         }
 
@@ -321,131 +313,85 @@
         return null;
       }
 
-      /**
-       * Validate all form inputs
-       */
       function validateForm() {
         const formData = new FormData(predictionForm);
-        let firstError = null;
-
         for (const [fieldName, value] of formData.entries()) {
           const error = validateField(fieldName, value);
           if (error) {
-            if (!firstError) firstError = error;
+            return error;
           }
         }
-
-        return firstError;
+        return null;
       }
 
-      /**
-       * Collect form data
-       */
       function getFormData() {
         const formData = new FormData(predictionForm);
         const data = {};
-
         for (const [key, value] of formData.entries()) {
           data[key] = parseFloat(value);
         }
-
         return data;
       }
 
-      /**
-       * Show error message
-       */
-      function showError(message) {
-        errorMessage.textContent = message;
-        errorSection.classList.remove("hidden");
-        resultsSection.classList.add("hidden");
-        loadingSection.classList.add("hidden");
-        window.scrollTo({
-          top: errorSection.offsetTop - 100,
-          behavior: "smooth",
-        });
-      }
-
-      /**
-       * Dismiss error
-       */
-      function dismissError() {
-        errorSection.classList.add("hidden");
-      }
-
-      /**
-       * Show loading state
-       */
+      // ==================== UI STATE MANAGEMENT ====================
       function showLoading() {
-        loadingSection.classList.remove("hidden");
-        errorSection.classList.add("hidden");
-        resultsSection.classList.add("hidden");
+        loadingSection.classList.remove('hidden');
+        errorSection.classList.add('hidden');
+        resultsSection.classList.add('hidden');
         submitBtn.disabled = true;
-        window.scrollTo({
-          top: loadingSection.offsetTop - 100,
-          behavior: "smooth",
-        });
+        window.scrollTo({ top: loadingSection.offsetTop - 100, behavior: 'smooth' });
       }
 
-      /**
-       * Hide loading state
-       */
       function hideLoading() {
-        loadingSection.classList.add("hidden");
+        loadingSection.classList.add('hidden');
         submitBtn.disabled = false;
       }
 
-      /**
-       * Display prediction result
-       */
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorSection.classList.remove('hidden');
+        resultsSection.classList.add('hidden');
+        loadingSection.classList.add('hidden');
+        window.scrollTo({ top: errorSection.offsetTop - 100, behavior: 'smooth' });
+      }
+
+      function dismissError() {
+        errorSection.classList.add('hidden');
+      }
+
       function displayResult(crop, confidence) {
-        // Parse confidence percentage
-        const confidencePercent = parseFloat(confidence);
+        const confValue = typeof confidence === 'string' 
+          ? parseFloat(confidence) 
+          : confidence;
 
-        // Use textContent to prevent XSS
         cropNameEl.textContent = crop;
-        cropConfidenceEl.textContent = confidence;
+        cropConfidenceEl.textContent = confValue.toFixed(2) + '%';
 
-        // Update confidence bar
-        confidenceBar.style.width = confidencePercent + "%";
-        confidenceBar.style.backgroundColor =
-          getColorForConfidence(confidencePercent);
+        confidenceBar.style.width = confValue + '%';
+        confidenceBar.style.backgroundColor = getColorForConfidence(confValue);
 
-        errorSection.classList.add("hidden");
-        loadingSection.classList.add("hidden");
-        resultsSection.classList.remove("hidden");
-        window.scrollTo({
-          top: resultsSection.offsetTop - 100,
-          behavior: "smooth",
-        });
+        errorSection.classList.add('hidden');
+        loadingSection.classList.add('hidden');
+        resultsSection.classList.remove('hidden');
+        window.scrollTo({ top: resultsSection.offsetTop - 100, behavior: 'smooth' });
       }
 
-      /**
-       * Get color based on confidence
-       */
       function getColorForConfidence(confidence) {
-        if (confidence >= 80) return "#10b981"; // Green
-        if (confidence >= 60) return "#f59e0b"; // Orange
-        return "#ef4444"; // Red
+        if (confidence >= 80) return '#10b981'; // Green
+        if (confidence >= 60) return '#f59e0b'; // Orange
+        return '#ef4444'; // Red
       }
 
-      /**
-       * Reset form
-       */
       function resetForm() {
         predictionForm.reset();
-        resultsSection.classList.add("hidden");
-        errorSection.classList.add("hidden");
-        loadingSection.classList.add("hidden");
-        window.scrollTo({
-          top: predictionForm.offsetTop - 100,
-          behavior: "smooth",
-        });
+        resultsSection.classList.add('hidden');
+        errorSection.classList.add('hidden');
+        loadingSection.classList.add('hidden');
+        window.scrollTo({ top: predictionForm.offsetTop - 100, behavior: 'smooth' });
       }
 
-      // ========== FORM SUBMISSION ==========
-
-      predictionForm.addEventListener("submit", async (e) => {
+      // ==================== FORM SUBMISSION ====================
+      async function handleFormSubmit(e) {
         e.preventDefault();
 
         // Validate form
@@ -463,36 +409,34 @@
 
         try {
           // Make API request
-          const response = await fetch("/api/predict", {
-            method: "POST",
+          const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify(formData),
-            credentials: "same-origin",
           });
 
           const data = await response.json();
 
-          if (response.ok) {
-            displayResult(data.crop, data.confidence);
+          if (response.ok && data.crop && data.confidence !== undefined) {
+            const confValue = typeof data.confidence === 'string'
+              ? parseFloat(data.confidence)
+              : data.confidence;
+            displayResult(data.crop, confValue);
           } else {
-            showError(
-              data.error || "Failed to get prediction. Please try again.",
-            );
+            showError(data.error || 'Failed to get prediction. Please try again.');
           }
         } catch (error) {
-          console.error("Error:", error);
-          showError(
-            "Network error. Please check your connection and try again.",
-          );
+          console.error('Error:', error);
+          showError('Network error. Please check your connection and try again.');
         } finally {
           hideLoading();
         }
-      });
+      }
 
-      // ========== INITIALIZATION ==========
-      console.log("Hydroponic Crop Recommendation System loaded successfully");
+      // ==================== INITIALIZATION ====================
+      console.log('✓ Crop Recommendation System loaded successfully');
     </script>
   </body>
 </html>
