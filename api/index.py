@@ -18,7 +18,7 @@ Security Features:
 - CORS security
 """
 
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -30,8 +30,24 @@ import secrets
 from werkzeug.exceptions import BadRequest, InternalServerError
 
 # ==================== APP CONFIGURATION ====================
-app = Flask(__name__, template_folder='../templates',
-            static_folder='../static')
+# Set template and static folders using absolute paths for Vercel compatibility
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+template_folder = os.path.join(base_dir, 'templates')
+static_folder = os.path.join(base_dir, 'static')
+
+app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+
+# ==================== LOGGING ====================
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Log folder configuration for debugging
+logger.info(f"✓ Base directory: {base_dir}")
+logger.info(f"✓ Template folder: {template_folder}")
+logger.info(f"✓ Static folder: {static_folder}")
+logger.info(f"✓ Static folder exists: {os.path.exists(static_folder)}")
+if os.path.exists(static_folder):
+    logger.info(f"✓ Static files: {os.listdir(static_folder)}")
 
 # Secure session configuration
 app.config['SESSION_COOKIE_SECURE'] = False  # Vercel uses HTTP in dev/preview
@@ -70,10 +86,6 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
-
-# ==================== LOGGING ====================
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # ==================== MODEL LOADING ====================
 
@@ -121,12 +133,12 @@ scaler = load_scaler()
 
 @app.route('/')
 def home():
-    """Serve the home page"""
+    """Render the home page"""
     try:
-        return send_from_directory(app.template_folder, 'index.html')
+        return render_template('index.html')
     except Exception as e:
-        logger.error(f"Error serving home page: {str(e)}")
-        return jsonify({"error": "Unable to load page"}), 500
+        logger.error(f"Error rendering home page: {str(e)}")
+        return jsonify({"error": "Unable to render page"}), 500
 
 
 @app.route('/api/predict', methods=['POST'])
