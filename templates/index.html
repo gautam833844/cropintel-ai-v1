@@ -463,7 +463,7 @@
 
         try {
           // Make API request
-          const response = await fetch("/predict", {
+          const response = await fetch("/api/predict", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -474,7 +474,7 @@
 
           const data = await response.json();
 
-          if (response.ok && data.success) {
+          if (response.ok) {
             displayResult(data.crop, data.confidence);
           } else {
             showError(
