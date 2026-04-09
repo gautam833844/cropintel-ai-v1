@@ -82,20 +82,38 @@ def load_model():
     """Load the trained ML model"""
     try:
         model_path = os.path.join(os.path.dirname(
-            __file__), '..', 'crop_recommendation_model.pkl')
+            __file__), '..', 'crop_model.pkl')
         if os.path.exists(model_path):
             model = joblib.load(model_path)
-            logger.info("Model loaded successfully")
+            logger.info("✓ Ensemble model loaded successfully from crop_model.pkl")
             return model
         else:
-            logger.warning("Model file not found")
+            logger.warning("✗ Model file not found at: " + model_path)
             return None
     except Exception as e:
-        logger.error(f"Error loading model: {str(e)}")
+        logger.error(f"✗ Error loading model: {str(e)}")
+        return None
+
+
+def load_scaler():
+    """Load the feature scaler"""
+    try:
+        scaler_path = os.path.join(os.path.dirname(
+            __file__), '..', 'scaler.pkl')
+        if os.path.exists(scaler_path):
+            scaler = joblib.load(scaler_path)
+            logger.info("✓ Feature scaler loaded successfully from scaler.pkl")
+            return scaler
+        else:
+            logger.warning("⚠ Scaler file not found. Using raw features.")
+            return None
+    except Exception as e:
+        logger.error(f"⚠ Error loading scaler: {str(e)}")
         return None
 
 
 model = load_model()
+scaler = load_scaler()
 
 # ==================== ROUTES ====================
 
@@ -134,7 +152,7 @@ def predict():
 
         # Validate feature values are numeric
         try:
-            features = [float(data[feature]) for feature in required_features]
+            features = np.array([float(data[feature]) for feature in required_features])
         except (ValueError, TypeError):
             return jsonify({"error": "All features must be numeric values"}), 400
 
@@ -142,13 +160,19 @@ def predict():
         if not all(f >= 0 for f in features):
             return jsonify({"error": "All feature values must be non-negative"}), 400
 
+        # Reshape for prediction
+        features = features.reshape(1, -1)
+        
+        # Apply scaler if available
+        if scaler is not None:
+            features = scaler.transform(features)
+
         # Make prediction
-        features_array = np.array([features])
-        prediction = model.predict(features_array)
+        prediction = model.predict(features)[0]
 
         # Get prediction probabilities if available
         try:
-            probabilities = model.predict_proba(features_array)
+            probabilities = model.predict_proba(features)[0]
             max_prob = float(np.max(probabilities)) * 100
         except:
             max_prob = 90.0  # Default confidence if probabilities not available
@@ -161,18 +185,18 @@ def predict():
             confidence = MIN_CONFIDENCE
 
         response = {
-            "crop": str(prediction[0]),
+            "crop": str(prediction),
             "confidence": round(confidence, 2),
-            "message": f"Recommended crop: {prediction[0]} with {round(confidence, 2)}% confidence"
+            "message": f"Recommended crop: {prediction} with {round(confidence, 2)}% confidence"
         }
 
-        logger.info(f"Prediction made: {response}")
+        logger.info(f"✓ Prediction made: {response}")
         return jsonify(response), 200
 
     except BadRequest as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Prediction error: {str(e)}")
+        logger.error(f"✗ Prediction error: {str(e)}")
         return jsonify({"error": "Prediction failed"}), 500
 
 
