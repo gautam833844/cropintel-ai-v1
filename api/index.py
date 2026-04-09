@@ -35,7 +35,8 @@ base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 template_folder = os.path.join(base_dir, 'templates')
 static_folder = os.path.join(base_dir, 'static')
 
-app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+app = Flask(__name__, template_folder=template_folder,
+            static_folder=static_folder)
 
 # ==================== LOGGING ====================
 logging.basicConfig(level=logging.INFO)
@@ -89,40 +90,74 @@ limiter = Limiter(
 
 # ==================== MODEL LOADING ====================
 
-
 def load_model():
-    """Load the trained ML model"""
-    try:
-        model_path = os.path.join(os.path.dirname(
-            __file__), '..', 'crop_model.pkl')
-        if os.path.exists(model_path):
-            model = joblib.load(model_path)
-            logger.info(
-                "✓ Ensemble model loaded successfully from crop_model.pkl")
-            return model
-        else:
-            logger.warning("✗ Model file not found at: " + model_path)
-            return None
-    except Exception as e:
-        logger.error(f"✗ Error loading model: {str(e)}")
-        return None
+    """Load the trained ML model with multiple fallback paths"""
+    model = None
+    api_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Try multiple possible locations for the model file
+    possible_paths = [
+        os.path.join(api_dir, '..', 'crop_model.pkl'),  # Parent directory
+        os.path.join(api_dir, 'crop_model.pkl'),         # Same directory (for Vercel)
+        os.path.join('/tmp', 'crop_model.pkl'),          # Vercel temp directory
+        'crop_model.pkl'                                  # Current working directory
+    ]
+    
+    logger.info(f"Attempting to load model from {len(possible_paths)} possible locations...")
+    
+    for model_path in possible_paths:
+        abs_path = os.path.abspath(model_path)
+        logger.info(f"  Checking: {abs_path}")
+        
+        if os.path.exists(abs_path):
+            try:
+                model = joblib.load(abs_path)
+                logger.info(f"✓ Model loaded successfully from: {abs_path}")
+                return model
+            except Exception as e:
+                logger.error(f"✗ Error loading model from {abs_path}: {str(e)}")
+                continue
+    
+    # If we get here, model was not found
+    logger.error("✗ Model file not found in any of the expected locations:")
+    for path in possible_paths:
+        logger.error(f"    - {os.path.abspath(path)}")
+    
+    logger.error("⚠ WARNING: Model will not be available for predictions!")
+    logger.error("   The buildCommand 'python train_model.py' may have failed during deployment.")
+    return None
 
 
 def load_scaler():
-    """Load the feature scaler"""
-    try:
-        scaler_path = os.path.join(os.path.dirname(
-            __file__), '..', 'scaler.pkl')
-        if os.path.exists(scaler_path):
-            scaler = joblib.load(scaler_path)
-            logger.info("✓ Feature scaler loaded successfully from scaler.pkl")
-            return scaler
-        else:
-            logger.warning("⚠ Scaler file not found. Using raw features.")
-            return None
-    except Exception as e:
-        logger.error(f"⚠ Error loading scaler: {str(e)}")
-        return None
+    """Load the feature scaler with multiple fallback paths"""
+    scaler = None
+    api_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Try multiple possible locations for the scaler file
+    possible_paths = [
+        os.path.join(api_dir, '..', 'scaler.pkl'),  # Parent directory
+        os.path.join(api_dir, 'scaler.pkl'),        # Same directory (for Vercel)
+        os.path.join('/tmp', 'scaler.pkl'),         # Vercel temp directory
+        'scaler.pkl'                                 # Current working directory
+    ]
+    
+    logger.info(f"Attempting to load scaler from {len(possible_paths)} possible locations...")
+    
+    for scaler_path in possible_paths:
+        abs_path = os.path.abspath(scaler_path)
+        logger.info(f"  Checking: {abs_path}")
+        
+        if os.path.exists(abs_path):
+            try:
+                scaler = joblib.load(abs_path)
+                logger.info(f"✓ Scaler loaded successfully from: {abs_path}")
+                return scaler
+            except Exception as e:
+                logger.error(f"✗ Error loading scaler from {abs_path}: {str(e)}")
+                continue
+    
+    logger.warning("⚠ Scaler file not found. Using raw features without scaling.")
+    return None
 
 
 model = load_model()
