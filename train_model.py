@@ -324,7 +324,7 @@ print(f"  • Feature Scaling: StandardScaler (mean=0, std=1)")
 
 print(f"\n[PERF] PERFORMANCE METRICS")
 print(
-    f"  • Best Validation Accuracy: {max(rf_acc_val, gb_acc_val, et_acc_val, ensemble_val_accuracy):.4f} ({max(rf_acc_val, gb_acc_val, et_acc_val, ensemble_val_accuracy)*100:.2f}%)")
+    f"  • Best Validation Accuracy: {max(rf_acc_val, et_acc_val, ensemble_val_accuracy):.4f} ({max(rf_acc_val, et_acc_val, ensemble_val_accuracy)*100:.2f}%)")
 print(
     f"  • Test Accuracy (Ensemble): {ensemble_acc_test:.4f} ({ensemble_acc_test*100:.2f}%)")
 print(f"  • Precision (weighted): {precision:.4f} ({precision*100:.2f}%)")
