@@ -18,7 +18,7 @@ Security Features:
 - CORS security
 """
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -85,7 +85,8 @@ def load_model():
             __file__), '..', 'crop_model.pkl')
         if os.path.exists(model_path):
             model = joblib.load(model_path)
-            logger.info("✓ Ensemble model loaded successfully from crop_model.pkl")
+            logger.info(
+                "✓ Ensemble model loaded successfully from crop_model.pkl")
             return model
         else:
             logger.warning("✗ Model file not found at: " + model_path)
@@ -120,12 +121,12 @@ scaler = load_scaler()
 
 @app.route('/')
 def home():
-    """Render the home page"""
+    """Serve the home page"""
     try:
-        return render_template('index.html')
+        return send_from_directory(app.template_folder, 'index.html')
     except Exception as e:
-        logger.error(f"Error rendering home page: {str(e)}")
-        return jsonify({"error": "Unable to render page"}), 500
+        logger.error(f"Error serving home page: {str(e)}")
+        return jsonify({"error": "Unable to load page"}), 500
 
 
 @app.route('/api/predict', methods=['POST'])
@@ -152,7 +153,8 @@ def predict():
 
         # Validate feature values are numeric
         try:
-            features = np.array([float(data[feature]) for feature in required_features])
+            features = np.array([float(data[feature])
+                                for feature in required_features])
         except (ValueError, TypeError):
             return jsonify({"error": "All features must be numeric values"}), 400
 
@@ -162,7 +164,7 @@ def predict():
 
         # Reshape for prediction
         features = features.reshape(1, -1)
-        
+
         # Apply scaler if available
         if scaler is not None:
             features = scaler.transform(features)

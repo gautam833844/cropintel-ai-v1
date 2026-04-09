@@ -1,5 +1,9 @@
 {
     "version": 2,
+    "buildCommand": "python train_model.py",
+    "env": {
+        "PYTHONUNBUFFERED": "1"
+    },
     "builds": [
         {
             "src": "api/index.py",
