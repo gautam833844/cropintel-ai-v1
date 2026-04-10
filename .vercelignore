@@ -18,4 +18,3 @@ generate_large_dataset.py
 training_log.txt
 training_output.txt
 run_pipeline.py
-train_model.py

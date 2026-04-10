@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "buildCommand": "python train_model.py",
+    "buildCommand": "python train_model.py && echo 'Build complete'",
     "builds": [
         {
             "src": "api/index.py",
