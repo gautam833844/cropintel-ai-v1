@@ -291,7 +291,7 @@ def home():
 
 # ==================== ROUTE: PREDICTION ENDPOINT ====================
 
-@app.route('/predict', methods=['POST'])
+@app.route('/api/predict', methods=['POST'])
 @limiter.limit("30 per hour")  # Rate limit: 30 predictions per hour per IP
 def predict():
     """
