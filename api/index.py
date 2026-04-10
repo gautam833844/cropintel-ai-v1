@@ -28,7 +28,7 @@ import logging
 import os
 import secrets
 from werkzeug.exceptions import BadRequest, InternalServerError
-from openai import OpenAI
+import sys
 
 # ==================== APP CONFIGURATION ====================
 # Set template and static folders using absolute paths for Vercel compatibility
@@ -185,20 +185,16 @@ def load_scaler():
 model = load_model()
 scaler = load_scaler()
 
-# ==================== AI INTEGRATION ====================
-# Initialize OpenAI client for AI-powered explanations
-ai_client = None
-openai_api_key = os.getenv('OPENAI_API_KEY')
-
-if openai_api_key:
-    try:
-        ai_client = OpenAI(api_key=openai_api_key)
-        logger.info("✓ OpenAI client initialized for AI explanations")
-    except Exception as e:
-        logger.warning(f"⚠ Failed to initialize OpenAI: {str(e)}")
-        ai_client = None
-else:
-    logger.warning("⚠ OPENAI_API_KEY not set. AI features will be disabled.")
+# ==================== LOCAL AI KNOWLEDGE BASE ====================
+# Import local knowledge base for crop recommendations (no external API needed)
+try:
+    # Try to import from the same directory first (for local dev)
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from crop_knowledge_base import get_crop_advice
+    logger.info("✓ Local crop knowledge base loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠ Could not load crop knowledge base: {str(e)}")
+    get_crop_advice = None
 
 # ==================== ROUTES ====================
 
@@ -287,13 +283,13 @@ def predict():
 
 
 @app.route('/api/explain', methods=['POST'])
-@limiter.limit("5 per minute")  # Rate limit AI calls
+@limiter.limit("10 per minute")  # Higher limit since it's local
 def explain():
-    """Generate AI-powered explanation for crop recommendation"""
+    """Generate crop explanation using local knowledge base (no API needed)"""
     try:
-        if not ai_client:
+        if not get_crop_advice:
             return jsonify({
-                "explanation": "AI explanations are not available. Please set OPENAI_API_KEY environment variable.",
+                "explanation": "Local knowledge base is not available.",
                 "tips": [],
                 "benefits": []
             }), 200
@@ -303,73 +299,38 @@ def explain():
             return jsonify({"error": "No JSON data provided"}), 400
 
         crop = data.get('crop')
-        nitrogen = data.get('nitrogen')
-        phosphorus = data.get('phosphorus')
-        potassium = data.get('potassium')
-        temperature = data.get('temperature')
-        humidity = data.get('humidity')
-        ph = data.get('ph')
-        rainfall = data.get('rainfall')
-        confidence = data.get('confidence', 'unknown')
+        nitrogen = float(data.get('nitrogen', 0))
+        phosphorus = float(data.get('phosphorus', 0))
+        potassium = float(data.get('potassium', 0))
+        temperature = float(data.get('temperature', 0))
+        humidity = float(data.get('humidity', 0))
+        ph = float(data.get('ph', 0))
+        rainfall = float(data.get('rainfall', 0))
 
         if not crop:
             return jsonify({"error": "Crop name is required"}), 400
 
-        # Create a detailed prompt for the AI
-        prompt = f"""You are an expert agricultural advisor for hydroponic farming systems.
-
-A machine learning model has recommended growing {crop} with {confidence}% confidence based on these farm conditions:
-- Nitrogen (N): {nitrogen} mg/kg
-- Phosphorus (P): {phosphorus} mg/kg
-- Potassium (K): {potassium} mg/kg
-- Temperature: {temperature}°C
-- Humidity: {humidity}%
-- pH Level: {ph}
-- Rainfall: {rainfall} mm
-
-Please provide:
-1. A brief explanation (2-3 sentences) of why {crop} is ideal for these conditions
-2. 3-5 specific growing tips for {crop} in a hydroponic system
-3. Key benefits of growing {crop}
-
-Format your response as JSON with keys: "explanation", "tips" (array), "benefits" (array)"""
-
-        # Call OpenAI API
-        response = ai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an expert agricultural advisor. Respond only with valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=500
+        # Get advice from local knowledge base
+        result = get_crop_advice(
+            crop_name=crop,
+            nitrogen=nitrogen,
+            phosphorus=phosphorus,
+            potassium=potassium,
+            temperature=temperature,
+            humidity=humidity,
+            ph=ph,
+            rainfall=rainfall
         )
 
-        # Parse the response
-        ai_response = response.choices[0].message.content
-        
-        # Try to parse as JSON
-        import json
-        try:
-            result = json.loads(ai_response)
-        except json.JSONDecodeError:
-            # If not valid JSON, wrap in response object
-            result = {
-                "explanation": ai_response,
-                "tips": [],
-                "benefits": []
-            }
-
-        logger.info(f"✓ AI explanation generated for {crop}")
+        logger.info(f"✓ Local knowledge base explanation generated for {crop}")
         return jsonify(result), 200
 
     except Exception as e:
-        logger.error(f"✗ AI explanation error: {str(e)}")
+        logger.error(f"✗ Explanation error: {str(e)}")
         return jsonify({
-            "explanation": "Unable to generate AI explanation at this time.",
+            "explanation": "Unable to generate explanation at this time.",
             "tips": [],
-            "benefits": [],
-            "error": str(e)
+            "benefits": []
         }), 500
 
 

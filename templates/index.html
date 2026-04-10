@@ -236,18 +236,25 @@
         </section>
 
         <!-- AI Explanation Section -->
-        <section id="aiExplanationSection" class="ai-explanation-section hidden">
+        <section
+          id="aiExplanationSection"
+          class="ai-explanation-section hidden"
+        >
           <div class="explanation-card">
             <div class="explanation-header">
               <h2>🤖 AI-Powered Insights</h2>
-              <p class="explanation-subtitle">Expert agricultural advice for your recommendation</p>
+              <p class="explanation-subtitle">
+                Expert agricultural advice for your recommendation
+              </p>
             </div>
 
             <div class="explanation-content">
               <!-- Explanation Text -->
               <div class="explanation-item">
                 <h3>Why This Crop?</h3>
-                <p id="aiExplanation" class="explanation-text">Loading insight...</p>
+                <p id="aiExplanation" class="explanation-text">
+                  Loading insight...
+                </p>
               </div>
 
               <!-- Growing Tips -->
@@ -448,10 +455,10 @@
         errorSection.classList.add("hidden");
         loadingSection.classList.add("hidden");
         resultsSection.classList.remove("hidden");
-        
+
         // Fetch AI explanation
         fetchAIExplanation(crop, confidence);
-        
+
         window.scrollTo({
           top: resultsSection.offsetTop - 100,
           behavior: "smooth",
@@ -462,14 +469,16 @@
        * Fetch AI-powered explanation for the crop
        */
       async function fetchAIExplanation(crop, confidence) {
-        const aiExplanationSection = document.getElementById('aiExplanationSection');
-        
+        const aiExplanationSection = document.getElementById(
+          "aiExplanationSection",
+        );
+
         try {
           const formData = getFormData();
           const requestData = {
             crop: crop,
             confidence: confidence,
-            ...formData
+            ...formData,
           };
 
           const response = await fetch("/api/explain", {
@@ -484,39 +493,42 @@
 
           if (response.ok) {
             // Display explanation
-            document.getElementById('aiExplanation').textContent = data.explanation || "No explanation available";
-            
+            document.getElementById("aiExplanation").textContent =
+              data.explanation || "No explanation available";
+
             // Display tips
-            const tipsList = document.getElementById('aiTips');
-            tipsList.innerHTML = '';
+            const tipsList = document.getElementById("aiTips");
+            tipsList.innerHTML = "";
             if (data.tips && Array.isArray(data.tips)) {
-              data.tips.forEach(tip => {
-                const li = document.createElement('li');
+              data.tips.forEach((tip) => {
+                const li = document.createElement("li");
                 li.textContent = tip;
                 tipsList.appendChild(li);
               });
             }
-            
+
             // Display benefits
-            const benefitsList = document.getElementById('aiBenefits');
-            benefitsList.innerHTML = '';
+            const benefitsList = document.getElementById("aiBenefits");
+            benefitsList.innerHTML = "";
             if (data.benefits && Array.isArray(data.benefits)) {
-              data.benefits.forEach(benefit => {
-                const li = document.createElement('li');
+              data.benefits.forEach((benefit) => {
+                const li = document.createElement("li");
                 li.textContent = benefit;
                 benefitsList.appendChild(li);
               });
             }
-            
-            aiExplanationSection.classList.remove('hidden');
+
+            aiExplanationSection.classList.remove("hidden");
           } else {
             // Show fallback message
-            aiExplanationSection.classList.add('hidden');
+            aiExplanationSection.classList.add("hidden");
           }
         } catch (error) {
           console.error("Error fetching AI explanation:", error);
           // Silently skip AI explanation on error
-          document.getElementById('aiExplanationSection').classList.add('hidden');
+          document
+            .getElementById("aiExplanationSection")
+            .classList.add("hidden");
         }
       }
 
