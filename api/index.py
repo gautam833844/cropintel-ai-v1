@@ -210,8 +210,8 @@ def predict():
         if not data:
             raise BadRequest("No JSON data provided")
 
-        # Required features for crop recommendation
-        required_features = ['N', 'P', 'K',
+        # Required features for crop recommendation (match form field names)
+        required_features = ['nitrogen', 'phosphorus', 'potassium',
                              'temperature', 'humidity', 'ph', 'rainfall']
 
         # Validate all required features are present
