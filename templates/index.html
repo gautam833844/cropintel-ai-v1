@@ -235,6 +235,40 @@
           </div>
         </section>
 
+        <!-- AI Explanation Section -->
+        <section id="aiExplanationSection" class="ai-explanation-section hidden">
+          <div class="explanation-card">
+            <div class="explanation-header">
+              <h2>🤖 AI-Powered Insights</h2>
+              <p class="explanation-subtitle">Expert agricultural advice for your recommendation</p>
+            </div>
+
+            <div class="explanation-content">
+              <!-- Explanation Text -->
+              <div class="explanation-item">
+                <h3>Why This Crop?</h3>
+                <p id="aiExplanation" class="explanation-text">Loading insight...</p>
+              </div>
+
+              <!-- Growing Tips -->
+              <div class="explanation-item">
+                <h3>🌱 Growing Tips</h3>
+                <ul id="aiTips" class="tips-list">
+                  <li>Loading tips...</li>
+                </ul>
+              </div>
+
+              <!-- Benefits -->
+              <div class="explanation-item">
+                <h3>✨ Key Benefits</h3>
+                <ul id="aiBenefits" class="benefits-list">
+                  <li>Loading benefits...</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Error Section -->
         <section id="errorSection" class="error-section hidden">
           <div class="error-card">
@@ -414,10 +448,76 @@
         errorSection.classList.add("hidden");
         loadingSection.classList.add("hidden");
         resultsSection.classList.remove("hidden");
+        
+        // Fetch AI explanation
+        fetchAIExplanation(crop, confidence);
+        
         window.scrollTo({
           top: resultsSection.offsetTop - 100,
           behavior: "smooth",
         });
+      }
+
+      /**
+       * Fetch AI-powered explanation for the crop
+       */
+      async function fetchAIExplanation(crop, confidence) {
+        const aiExplanationSection = document.getElementById('aiExplanationSection');
+        
+        try {
+          const formData = getFormData();
+          const requestData = {
+            crop: crop,
+            confidence: confidence,
+            ...formData
+          };
+
+          const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestData),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Display explanation
+            document.getElementById('aiExplanation').textContent = data.explanation || "No explanation available";
+            
+            // Display tips
+            const tipsList = document.getElementById('aiTips');
+            tipsList.innerHTML = '';
+            if (data.tips && Array.isArray(data.tips)) {
+              data.tips.forEach(tip => {
+                const li = document.createElement('li');
+                li.textContent = tip;
+                tipsList.appendChild(li);
+              });
+            }
+            
+            // Display benefits
+            const benefitsList = document.getElementById('aiBenefits');
+            benefitsList.innerHTML = '';
+            if (data.benefits && Array.isArray(data.benefits)) {
+              data.benefits.forEach(benefit => {
+                const li = document.createElement('li');
+                li.textContent = benefit;
+                benefitsList.appendChild(li);
+              });
+            }
+            
+            aiExplanationSection.classList.remove('hidden');
+          } else {
+            // Show fallback message
+            aiExplanationSection.classList.add('hidden');
+          }
+        } catch (error) {
+          console.error("Error fetching AI explanation:", error);
+          // Silently skip AI explanation on error
+          document.getElementById('aiExplanationSection').classList.add('hidden');
+        }
       }
 
       /**

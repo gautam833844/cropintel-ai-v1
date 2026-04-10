@@ -28,6 +28,7 @@ import logging
 import os
 import secrets
 from werkzeug.exceptions import BadRequest, InternalServerError
+from openai import OpenAI
 
 # ==================== APP CONFIGURATION ====================
 # Set template and static folders using absolute paths for Vercel compatibility
@@ -184,6 +185,21 @@ def load_scaler():
 model = load_model()
 scaler = load_scaler()
 
+# ==================== AI INTEGRATION ====================
+# Initialize OpenAI client for AI-powered explanations
+ai_client = None
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+if openai_api_key:
+    try:
+        ai_client = OpenAI(api_key=openai_api_key)
+        logger.info("✓ OpenAI client initialized for AI explanations")
+    except Exception as e:
+        logger.warning(f"⚠ Failed to initialize OpenAI: {str(e)}")
+        ai_client = None
+else:
+    logger.warning("⚠ OPENAI_API_KEY not set. AI features will be disabled.")
+
 # ==================== ROUTES ====================
 
 
@@ -268,6 +284,93 @@ def predict():
     except Exception as e:
         logger.error(f"✗ Prediction error: {str(e)}")
         return jsonify({"error": "Prediction failed"}), 500
+
+
+@app.route('/api/explain', methods=['POST'])
+@limiter.limit("5 per minute")  # Rate limit AI calls
+def explain():
+    """Generate AI-powered explanation for crop recommendation"""
+    try:
+        if not ai_client:
+            return jsonify({
+                "explanation": "AI explanations are not available. Please set OPENAI_API_KEY environment variable.",
+                "tips": [],
+                "benefits": []
+            }), 200
+
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+
+        crop = data.get('crop')
+        nitrogen = data.get('nitrogen')
+        phosphorus = data.get('phosphorus')
+        potassium = data.get('potassium')
+        temperature = data.get('temperature')
+        humidity = data.get('humidity')
+        ph = data.get('ph')
+        rainfall = data.get('rainfall')
+        confidence = data.get('confidence', 'unknown')
+
+        if not crop:
+            return jsonify({"error": "Crop name is required"}), 400
+
+        # Create a detailed prompt for the AI
+        prompt = f"""You are an expert agricultural advisor for hydroponic farming systems.
+
+A machine learning model has recommended growing {crop} with {confidence}% confidence based on these farm conditions:
+- Nitrogen (N): {nitrogen} mg/kg
+- Phosphorus (P): {phosphorus} mg/kg
+- Potassium (K): {potassium} mg/kg
+- Temperature: {temperature}°C
+- Humidity: {humidity}%
+- pH Level: {ph}
+- Rainfall: {rainfall} mm
+
+Please provide:
+1. A brief explanation (2-3 sentences) of why {crop} is ideal for these conditions
+2. 3-5 specific growing tips for {crop} in a hydroponic system
+3. Key benefits of growing {crop}
+
+Format your response as JSON with keys: "explanation", "tips" (array), "benefits" (array)"""
+
+        # Call OpenAI API
+        response = ai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert agricultural advisor. Respond only with valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+
+        # Parse the response
+        ai_response = response.choices[0].message.content
+        
+        # Try to parse as JSON
+        import json
+        try:
+            result = json.loads(ai_response)
+        except json.JSONDecodeError:
+            # If not valid JSON, wrap in response object
+            result = {
+                "explanation": ai_response,
+                "tips": [],
+                "benefits": []
+            }
+
+        logger.info(f"✓ AI explanation generated for {crop}")
+        return jsonify(result), 200
+
+    except Exception as e:
+        logger.error(f"✗ AI explanation error: {str(e)}")
+        return jsonify({
+            "explanation": "Unable to generate AI explanation at this time.",
+            "tips": [],
+            "benefits": [],
+            "error": str(e)
+        }), 500
 
 
 @app.route('/api/health', methods=['GET'])

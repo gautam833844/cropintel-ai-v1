@@ -364,6 +364,95 @@ main {
     box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3);
 }
 
+/* ==================== AI EXPLANATION SECTION ==================== */
+.ai-explanation-section {
+    background: white;
+    padding: 50px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid #7c4dff;
+    margin-top: 30px;
+}
+
+.explanation-card {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.explanation-header {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 20px;
+}
+
+.explanation-header h2 {
+    font-size: 2em;
+    color: #7c4dff;
+    margin-bottom: 10px;
+}
+
+.explanation-subtitle {
+    color: #999;
+    font-size: 0.95em;
+}
+
+.explanation-content {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.explanation-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.explanation-item h3 {
+    font-size: 1.2em;
+    color: #1b5e20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.explanation-text {
+    font-size: 1em;
+    line-height: 1.8;
+    color: #555;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #7c4dff;
+}
+
+.tips-list,
+.benefits-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tips-list li,
+.benefits-list li {
+    padding: 12px 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border-left: 4px solid #7c4dff;
+    color: #555;
+    line-height: 1.6;
+}
+
+.tips-list li:before {
+    content: "🌱 ";
+}
+
+.benefits-list li:before {
+    content: "✨ ";
+}
+
 /* ==================== ERROR SECTION ==================== */
 .error-section {
     background: white;
