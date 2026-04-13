@@ -30,7 +30,7 @@ CROP_DATABASE = {
             "Nutritious staple grain with multiple uses"
         ]
     },
-    
+
     "papaya": {
         "optimal_conditions": {
             "nitrogen": (30, 100),
@@ -57,7 +57,7 @@ CROP_DATABASE = {
             "Uses for fresh fruit, juice, papain enzyme extraction"
         ]
     },
-    
+
     "maize": {
         "optimal_conditions": {
             "nitrogen": (80, 140),
@@ -84,7 +84,7 @@ CROP_DATABASE = {
             "Relatively short duration (120-150 days)"
         ]
     },
-    
+
     "tomato": {
         "optimal_conditions": {
             "nitrogen": (50, 150),
@@ -111,7 +111,7 @@ CROP_DATABASE = {
             "Multiple harvests from single plant"
         ]
     },
-    
+
     "wheat": {
         "optimal_conditions": {
             "nitrogen": (60, 120),
@@ -138,7 +138,7 @@ CROP_DATABASE = {
             "Relatively low input compared to other crops"
         ]
     },
-    
+
     "cotton": {
         "optimal_conditions": {
             "nitrogen": (80, 130),
@@ -165,7 +165,7 @@ CROP_DATABASE = {
             "Good income potential in suitable climates"
         ]
     },
-    
+
     "banana": {
         "optimal_conditions": {
             "nitrogen": (50, 120),
@@ -248,25 +248,26 @@ CROP_DATABASE = {
     }
 }
 
+
 def get_crop_advice(crop_name, nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall):
     """
     Generate personalized farming advice based on crop and conditions
     """
     crop_name = crop_name.lower()
-    
+
     if crop_name not in CROP_DATABASE:
         return {
             "explanation": f"Information for {crop_name.capitalize()} is not available in our knowledge base.",
             "tips": ["Consult local agricultural extension services for optimal practices"],
             "benefits": ["Conduct soil tests to determine crop suitability"]
         }
-    
+
     crop_info = CROP_DATABASE[crop_name]
     optimal = crop_info["optimal_conditions"]
-    
+
     # Generate condition-based explanation
     explanation = crop_info["explanation"]
-    
+
     # Check how conditions match optimal ranges
     condition_matches = []
     if optimal["nitrogen"][0] <= nitrogen <= optimal["nitrogen"][1]:
@@ -283,11 +284,11 @@ def get_crop_advice(crop_name, nitrogen, phosphorus, potassium, temperature, hum
         condition_matches.append("soil pH is appropriate")
     if optimal["rainfall"][0] <= rainfall <= optimal["rainfall"][1]:
         condition_matches.append("rainfall pattern is conducive")
-    
+
     # Enhance explanation with matching conditions
     if condition_matches:
         explanation += f" Your farm conditions show that {', '.join(condition_matches)}, which provides excellent growing potential for {crop_name.capitalize()}."
-    
+
     return {
         "explanation": explanation,
         "tips": crop_info["tips"],
