@@ -30,11 +30,16 @@ import secrets
 from werkzeug.exceptions import BadRequest, InternalServerError
 import sys
 
-# ==================== APP CONFIGURATION ====================
-# Set template and static folders using absolute paths for Vercel compatibility
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-template_folder = os.path.join(base_dir, 'templates')
-static_folder = os.path.join(base_dir, 'static')
+from pathlib import Path
+
+# Set template and static folders using pathlib.Path for Vercel compatibility
+api_dir = Path(__file__).resolve().parent
+base_dir = api_dir.parent.parent
+if str(base_dir) not in sys.path:
+    sys.path.insert(0, str(base_dir))
+
+template_folder = str(base_dir / 'templates')
+static_folder = str(base_dir / 'static')
 
 app = Flask(__name__, template_folder=template_folder,
             static_folder=static_folder)
@@ -95,31 +100,29 @@ limiter = Limiter(
 def load_model():
     """Load the trained ML model with multiple fallback paths for Vercel compatibility"""
     model = None
-    api_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.dirname(api_dir)
+    curr_dir = Path(__file__).resolve().parent
+    root_dir = curr_dir.parent.parent
 
-    # Try multiple possible locations for the model file in order of likelihood
     possible_paths = [
-        # Root directory (most likely)
-        os.path.join(base_dir, 'crop_model.pkl'),
-        # API directory (Vercel function)
-        os.path.join(api_dir, 'crop_model.pkl'),
-        os.path.join(api_dir, '..', 'crop_model.pkl'),   # Parent of API
-        # Vercel temp directory
-        os.path.join('/tmp', 'crop_model.pkl'),
-        # AWS Lambda task directory
-        os.path.join('/var', 'task', 'crop_model.pkl'),
-        'crop_model.pkl'                                  # Current working directory
+        root_dir / 'artifacts' / 'crop_model.pkl',
+        curr_dir / 'artifacts' / 'crop_model.pkl',
+        root_dir / 'crop_model.pkl',
+        Path('/tmp/crop_model.pkl'),
+        Path('/tmp/artifacts/crop_model.pkl'),
+        Path('/var/task/artifacts/crop_model.pkl'),
+        Path('/var/task/crop_model.pkl'),
+        Path('artifacts/crop_model.pkl'),
+        Path('crop_model.pkl')
     ]
 
-    logger.info(f"[MODEL LOADING] Base dir: {base_dir}")
-    logger.info(f"[MODEL LOADING] API dir: {api_dir}")
+    logger.info(f"[MODEL LOADING] Root dir: {root_dir}")
+    logger.info(f"[MODEL LOADING] API dir: {curr_dir}")
     logger.info(
         f"[MODEL LOADING] Checking {len(possible_paths)} possible locations...")
 
     for model_path in possible_paths:
-        abs_path = os.path.abspath(model_path)
-        exists = os.path.exists(abs_path)
+        abs_path = model_path.resolve() if model_path.is_absolute() else (root_dir / model_path).resolve()
+        exists = abs_path.exists()
         logger.info(f"[MODEL LOADING] {'✓' if exists else '✗'} {abs_path}")
 
         if exists:
@@ -133,41 +136,35 @@ def load_model():
                     f"[MODEL LOADING] ERROR loading from {abs_path}: {str(e)}")
                 continue
 
-    # If we reach here, model was not found anywhere
     logger.error(
         "[MODEL LOADING] CRITICAL: Model file not found in any location!")
-    logger.error("[MODEL LOADING] Checked paths:")
-    for path in possible_paths:
-        logger.error(f"[MODEL LOADING]   - {os.path.abspath(path)}")
-    logger.error(
-        "[MODEL LOADING] CAUSE: buildCommand 'python train_model.py' may have failed")
-    logger.error("[MODEL LOADING] ACTION: Check Vercel build logs")
-
     return None
 
 
 def load_scaler():
     """Load the feature scaler with multiple fallback paths"""
     scaler = None
-    api_dir = os.path.dirname(os.path.abspath(__file__))
+    curr_dir = Path(__file__).resolve().parent
+    root_dir = curr_dir.parent.parent
 
-    # Try multiple possible locations for the scaler file
     possible_paths = [
-        os.path.join(api_dir, '..', 'scaler.pkl'),  # Parent directory
-        # Same directory (for Vercel)
-        os.path.join(api_dir, 'scaler.pkl'),
-        os.path.join('/tmp', 'scaler.pkl'),         # Vercel temp directory
-        'scaler.pkl'                                 # Current working directory
+        root_dir / 'artifacts' / 'scaler.pkl',
+        curr_dir / 'artifacts' / 'scaler.pkl',
+        root_dir / 'scaler.pkl',
+        Path('/tmp/scaler.pkl'),
+        Path('/tmp/artifacts/scaler.pkl'),
+        Path('artifacts/scaler.pkl'),
+        Path('scaler.pkl')
     ]
 
     logger.info(
         f"Attempting to load scaler from {len(possible_paths)} possible locations...")
 
     for scaler_path in possible_paths:
-        abs_path = os.path.abspath(scaler_path)
+        abs_path = scaler_path.resolve() if scaler_path.is_absolute() else (root_dir / scaler_path).resolve()
         logger.info(f"  Checking: {abs_path}")
 
-        if os.path.exists(abs_path):
+        if abs_path.exists():
             try:
                 scaler = joblib.load(abs_path)
                 logger.info(f"✓ Scaler loaded successfully from: {abs_path}")
@@ -188,9 +185,7 @@ scaler = load_scaler()
 # ==================== LOCAL AI KNOWLEDGE BASE ====================
 # Import local knowledge base for crop recommendations (no external API needed)
 try:
-    # Try to import from the same directory first (for local dev)
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from crop_knowledge_base import get_crop_advice
+    from src.ai.crop_knowledge_base import get_crop_advice
     logger.info("✓ Local crop knowledge base loaded successfully")
 except ImportError as e:
     logger.warning(f"⚠ Could not load crop knowledge base: {str(e)}")
@@ -222,18 +217,29 @@ def predict():
         if not data:
             raise BadRequest("No JSON data provided")
 
-        # Required features for crop recommendation (match form field names)
+        # Support both 'nitrogen'/'N', 'phosphorus'/'P', 'potassium'/'K'
+        n_val = data.get('nitrogen', data.get('N'))
+        p_val = data.get('phosphorus', data.get('P'))
+        k_val = data.get('potassium', data.get('K'))
+        temp_val = data.get('temperature')
+        hum_val = data.get('humidity')
+        ph_val = data.get('ph')
+        rain_val = data.get('rainfall')
+
+        raw_features = {'nitrogen': n_val, 'phosphorus': p_val, 'potassium': k_val,
+                        'temperature': temp_val, 'humidity': hum_val, 'ph': ph_val, 'rainfall': rain_val}
+
         required_features = ['nitrogen', 'phosphorus', 'potassium',
                              'temperature', 'humidity', 'ph', 'rainfall']
 
         # Validate all required features are present
-        if not all(feature in data for feature in required_features):
-            missing = [f for f in required_features if f not in data]
+        if not all(raw_features[f] is not None for f in required_features):
+            missing = [f for f in required_features if raw_features[f] is None]
             return jsonify({"error": f"Missing features: {missing}"}), 400
 
         # Validate feature values are numeric
         try:
-            features = np.array([float(data[feature])
+            features = np.array([float(raw_features[feature])
                                 for feature in required_features])
         except (ValueError, TypeError):
             return jsonify({"error": "All features must be numeric values"}), 400
@@ -242,19 +248,22 @@ def predict():
         if not all(f >= 0 for f in features):
             return jsonify({"error": "All feature values must be non-negative"}), 400
 
-        # Reshape for prediction
-        features = features.reshape(1, -1)
+        # Construct DataFrame with column names
+        import pandas as pd
+        feature_cols = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+        features_df = pd.DataFrame([features], columns=feature_cols)
 
         # Apply scaler if available
         if scaler is not None:
-            features = scaler.transform(features)
+            scaled_array = scaler.transform(features_df)
+            features_df = pd.DataFrame(scaled_array, columns=feature_cols)
 
         # Make prediction
-        prediction = model.predict(features)[0]
+        prediction = model.predict(features_df)[0]
 
         # Get prediction probabilities if available
         try:
-            probabilities = model.predict_proba(features)[0]
+            probabilities = model.predict_proba(features_df)[0]
             max_prob = float(np.max(probabilities)) * 100
         except:
             max_prob = 90.0  # Default confidence if probabilities not available

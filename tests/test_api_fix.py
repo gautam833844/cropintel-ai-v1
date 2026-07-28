@@ -3,11 +3,17 @@
 
 import sys
 import json
-sys.path.insert(0, 'api')
+from pathlib import Path
 
-# Test the API
-api_module = __import__('index')
-client = api_module.app.test_client()
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from src.api.index import app
+client = app.test_client()
 
 # Test data with correct field names (matching form)
 test_data = {

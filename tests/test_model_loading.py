@@ -3,14 +3,21 @@
 
 import sys
 import os
-sys.path.insert(0, 'api')
+from pathlib import Path
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 print("\n=== Model Loading Verification ===\n")
 
 # Import the Flask app module
 try:
-    import index
-    print("✓ Successfully imported api/index.py")
+    from src.api import index
+    print("✓ Successfully imported src.api.index")
 except Exception as e:
     print(f"✗ Failed to import: {e}")
     sys.exit(1)

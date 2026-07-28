@@ -1,9 +1,9 @@
 {
     "version": 2,
-    "buildCommand": "python train_model.py && echo 'Build complete'",
+    "buildCommand": "python src/models/train_model.py && echo 'Build complete'",
     "builds": [
         {
-            "src": "api/index.py",
+            "src": "src/api/index.py",
             "use": "@vercel/python",
             "config": {
                 "maxLambdaSize": "50mb",
@@ -14,7 +14,7 @@
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/api/index.py"
+            "dest": "/src/api/index.py"
         }
     ]
 }

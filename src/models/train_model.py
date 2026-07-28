@@ -16,16 +16,31 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix
 import joblib
 import warnings
+import sys
 import os
-from tqdm import tqdm
+from pathlib import Path
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Add project root to sys.path
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from config.settings import (
+    ORIGINAL_DATASET_PATH, 
+    LARGE_DATASET_PATH, 
+    MODEL_PATH, 
+    SCALER_PATH, 
+    ARTIFACTS_DIR
+)
 
 warnings.filterwarnings('ignore')
 
 # ==================== CONFIGURATION ====================
-LARGE_DATASET_PATH = 'Crop_recommendation_large.csv'
-ORIGINAL_DATASET_PATH = 'Crop_recommendation.csv'
-MODEL_OUTPUT_PATH = 'crop_model.pkl'
-SCALER_OUTPUT_PATH = 'scaler.pkl'
+MODEL_OUTPUT_PATH = MODEL_PATH
+SCALER_OUTPUT_PATH = SCALER_PATH
 RANDOM_STATE = 42
 TEST_SIZE = 0.20  # 20% test, 80% train
 VALIDATION_SIZE = 0.20  # 20% of train for validation
@@ -299,9 +314,9 @@ joblib.dump(scaler, SCALER_OUTPUT_PATH)
 print(f"[OK] Feature scaler saved to '{SCALER_OUTPUT_PATH}'")
 
 # Save individual models for reference
-joblib.dump(rf_model, 'rf_model.pkl')
-joblib.dump(et_model, 'et_model.pkl')
-print(f"[OK] Individual models saved (rf_model.pkl, et_model.pkl)")
+joblib.dump(rf_model, ARTIFACTS_DIR / 'rf_model.pkl')
+joblib.dump(et_model, ARTIFACTS_DIR / 'et_model.pkl')
+print(f"[OK] Individual models saved to artifacts/ (rf_model.pkl, et_model.pkl)")
 
 # ==================== TRAINING SUMMARY ====================
 print("\n" + "=" * 80)

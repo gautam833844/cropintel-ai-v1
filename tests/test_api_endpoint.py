@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """Test the Flask API endpoint"""
 
-from index import app
-import json
 import sys
-sys.path.insert(0, 'api')
+import json
+from pathlib import Path
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from src.api.index import app
 
 print("\n=== Testing Flask API Endpoint ===\n")
 

@@ -3,11 +3,17 @@
 
 import sys
 import json
-sys.path.insert(0, 'api')
+from pathlib import Path
 
-# Import the Flask app
-api_module = __import__('index')
-client = api_module.app.test_client()
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from src.api.index import app
+client = app.test_client()
 
 print('=' * 70)
 print('Testing Complete API Flow: Prediction + Local AI Explanation')

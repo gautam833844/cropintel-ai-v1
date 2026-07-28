@@ -7,14 +7,25 @@ by creating variations with step size of 0.01 for each feature.
 
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
+import sys
 import warnings
+from pathlib import Path
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Add project root to sys.path
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from config.settings import ORIGINAL_DATASET_PATH, LARGE_DATASET_PATH
 
 warnings.filterwarnings('ignore')
 
 # Configuration
-ORIGINAL_CSV = 'Crop_recommendation.csv'
-OUTPUT_CSV = 'Crop_recommendation_large.csv'
+ORIGINAL_CSV = ORIGINAL_DATASET_PATH
+OUTPUT_CSV = LARGE_DATASET_PATH
 # Reduced for faster processing (100k samples = excellent for ML)
 TARGET_SAMPLES = 100000
 VARIATION_STEP = 0.01

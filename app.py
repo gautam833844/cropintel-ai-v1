@@ -78,52 +78,29 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+import sys
+from pathlib import Path
+
+# Add project root to sys.path
+BASE_DIR = Path(__file__).resolve().parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from config.settings import (
+    MODEL_PATH,
+    SCALER_PATH,
+    CONFIDENCE_TEMPERATURE,
+    CONFIDENCE_BOOST_FACTOR,
+    MIN_CONFIDENCE
+)
+from config.constants import INPUT_VALIDATION, REQUIRED_FIELDS
+from src.models.predictor import load_model, load_scaler
+
 logger = logging.getLogger(__name__)
 
 # ==================== MODEL LOADING ====================
-MODEL_PATH = 'crop_model.pkl'
-SCALER_PATH = 'scaler.pkl'
-
-model = None
-scaler = None
-
-# Load ensemble model
-try:
-    model = joblib.load(MODEL_PATH)
-    logger.info(f"✓ Ensemble model loaded successfully from {MODEL_PATH}")
-except FileNotFoundError:
-    logger.error(f"✗ Ensemble model file not found at {MODEL_PATH}")
-    model = None
-except Exception as e:
-    logger.error(f"✗ Error loading ensemble model: {str(e)}")
-    model = None
-
-# Load feature scaler
-try:
-    scaler = joblib.load(SCALER_PATH)
-    logger.info(f"✓ Feature scaler loaded successfully from {SCALER_PATH}")
-except FileNotFoundError:
-    logger.warning(
-        f"⚠ Feature scaler file not found at {SCALER_PATH}. Predictions may be less accurate.")
-    scaler = None
-except Exception as e:
-    logger.warning(
-        f"⚠ Error loading feature scaler: {str(e)}. Using raw features.")
-    scaler = None
-
-# ==================== VALIDATION CONFIGURATION ====================
-# Define valid input ranges for each feature
-INPUT_VALIDATION = {
-    'nitrogen': {'min': 0, 'max': 150, 'type': 'float'},
-    'phosphorus': {'min': 0, 'max': 150, 'type': 'float'},
-    'potassium': {'min': 0, 'max': 210, 'type': 'float'},
-    'temperature': {'min': -50, 'max': 60, 'type': 'float'},
-    'humidity': {'min': 0, 'max': 100, 'type': 'float'},
-    'ph': {'min': 0, 'max': 14, 'type': 'float'},
-    'rainfall': {'min': 0, 'max': 500, 'type': 'float'}
-}
-
-REQUIRED_FIELDS = list(INPUT_VALIDATION.keys())
+model = load_model(MODEL_PATH)
+scaler = load_scaler(SCALER_PATH)
 
 # ==================== UTILITY FUNCTIONS ====================
 
@@ -228,17 +205,25 @@ def validate_input_data(data):
 
 def prepare_features(validated_data):
     """
-    Prepare validated features for model prediction.
+    Prepare feature array from validated input data in correct format for model prediction.
 
     Args:
         validated_data (dict): Validated input data
 
     Returns:
-        np.ndarray: Features array in correct order for model
+        pd.DataFrame: Features DataFrame in correct order for model
     """
-    feature_order = REQUIRED_FIELDS
-    features = np.array([validated_data[field] for field in feature_order])
-    return features.reshape(1, -1)
+    import pandas as pd
+    n_val = float(validated_data['nitrogen'])
+    p_val = float(validated_data['phosphorus'])
+    k_val = float(validated_data['potassium'])
+    temp_val = float(validated_data['temperature'])
+    hum_val = float(validated_data['humidity'])
+    ph_val = float(validated_data['ph'])
+    rain_val = float(validated_data['rainfall'])
+
+    columns = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+    return pd.DataFrame([[n_val, p_val, k_val, temp_val, hum_val, ph_val, rain_val]], columns=columns)
 
 
 def calculate_confidence(probabilities, temperature=CONFIDENCE_TEMPERATURE, boost_factor=CONFIDENCE_BOOST_FACTOR):
@@ -356,7 +341,9 @@ def predict():
 
         # Step 6.5: Apply feature scaling if scaler is available
         if scaler is not None:
-            features = scaler.transform(features)
+            scaled_array = scaler.transform(features)
+            import pandas as pd
+            features = pd.DataFrame(scaled_array, columns=['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall'])
 
         # Step 7: Make prediction
         prediction = model.predict(features)[0]

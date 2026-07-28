@@ -23,16 +23,22 @@ wheels/
 .installed.cfg
 *.egg
 
-# Large ML model files - stored separately in Vercel
+# Large ML model files
 *.pkl
 *.joblib
 *.model
 *.h5
 *.pt
 *.pth
+artifacts/*.pkl
+!artifacts/.gitkeep
 
-# Large datasets
+# Large datasets & generated data
 *_large.csv
+data/generated/*
+!data/generated/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 
 # IDEs
 .vscode/
@@ -48,17 +54,9 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
-.env.*.local
-
-# Build outputs
-*.log
-training_log.txt
-training_output.txt
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Vercel
-.vercel/
+.vercel
